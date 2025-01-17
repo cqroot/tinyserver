@@ -2,9 +2,10 @@ package app
 
 import (
 	"fmt"
+	"net/http"
+
 	"github.com/cqroot/tinyserver/internal/middleware"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 func Run(bindIp string, bindPort int, whitelist []string) error {

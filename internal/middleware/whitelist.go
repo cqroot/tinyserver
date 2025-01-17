@@ -2,9 +2,10 @@ package middleware
 
 import (
 	"fmt"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"slices"
+
+	"github.com/gin-gonic/gin"
 )
 
 func WhitelistMiddleware(whiteList []string) gin.HandlerFunc {
