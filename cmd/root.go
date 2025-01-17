@@ -1,18 +1,35 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/cqroot/tinyserver/internal/app"
+	"github.com/fatih/color"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 )
 
-var (
-	BindIp    string
-	BindPort  int
-	Whitelist []string
-)
+func init() {
+	cobra.OnInitialize(initConfig)
+}
+
+func initConfig() {
+	viper.SetConfigFile("./tinyserver.yaml")
+	if err := viper.ReadInConfig(); err == nil {
+		fmt.Println("Using config file:", viper.ConfigFileUsed())
+	}
+}
 
 func RunRootCmd(cmd *cobra.Command, args []string) {
-	cobra.CheckErr(app.Run(BindIp, BindPort, Whitelist))
+	bindIp := viper.GetString("bind_ip")
+	bindPort := viper.GetInt("bind_port")
+	whitelist := viper.GetStringSlice("whitelist")
+
+	color.HiGreen("[TinyServer] Starting TinyServer.")
+	fmt.Printf("  %s: %s:%d\n", color.HiBlueString("Bind Addr"), bindIp, bindPort)
+	fmt.Printf("  %s: %v\n", color.HiBlueString("Whitelist"), whitelist)
+	fmt.Println()
+
+	cobra.CheckErr(app.Run(bindIp, bindPort, whitelist))
 }
 
 func NewRootCmd() *cobra.Command {
@@ -23,9 +40,12 @@ func NewRootCmd() *cobra.Command {
 		Run:   RunRootCmd,
 	}
 
-	rootCmd.PersistentFlags().StringVarP(&BindIp, "bind_ip", "i", "", "bind ip")
-	rootCmd.PersistentFlags().IntVarP(&BindPort, "bind_port", "p", 9876, "bind port")
-	rootCmd.PersistentFlags().StringArrayVarP(&Whitelist, "whitelist", "w", nil, "whitelist")
+	rootCmd.PersistentFlags().StringP("bind_ip", "i", "", "bind ip")
+	rootCmd.PersistentFlags().IntP("bind_port", "p", 9876, "bind port")
+	rootCmd.PersistentFlags().StringArrayP("whitelist", "w", nil, "whitelist")
+	cobra.CheckErr(viper.BindPFlag("bind_ip", rootCmd.PersistentFlags().Lookup("bind_ip")))
+	cobra.CheckErr(viper.BindPFlag("bind_port", rootCmd.PersistentFlags().Lookup("bind_port")))
+	cobra.CheckErr(viper.BindPFlag("whitelist", rootCmd.PersistentFlags().Lookup("whitelist")))
 
 	return &rootCmd
 }

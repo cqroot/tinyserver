@@ -8,6 +8,7 @@ import (
 )
 
 func Run(bindIp string, bindPort int, whitelist []string) error {
+	gin.SetMode(gin.ReleaseMode)
 	app := gin.Default()
 	app.Use(middleware.WhitelistMiddleware(whitelist))
 	app.StaticFS("/", http.Dir("."))
