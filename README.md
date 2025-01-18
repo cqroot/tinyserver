@@ -16,13 +16,13 @@
   </p>
 </div>
 
-# Usage
+## Usage
 
 ```bash
 tinyserver
 ```
 
-Available Options
+### Available Options
 
 | Option    | Flag              | Description              | Defaults |
 | :-------- | :---------------- | :----------------------- | :------- |
