@@ -25,10 +25,13 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func WhitelistMiddleware(whiteList []string) gin.HandlerFunc {
+func WhitelistMiddleware(whitelist []string) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		clientIp := c.ClientIP()
-		if !slices.Contains(whiteList, clientIp) {
+		if len(whitelist) == 0 {
+			return
+		}
+		if !slices.Contains(whitelist, clientIp) {
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"error": fmt.Sprintf("Client IP %s denied", clientIp),
 			})
