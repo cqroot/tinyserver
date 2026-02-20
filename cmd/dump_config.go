@@ -15,27 +15,30 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package middleware
+package cmd
 
 import (
 	"fmt"
-	"net/http"
-	"slices"
 
-	"github.com/gin-gonic/gin"
+	"github.com/spf13/cobra"
 )
 
-func WhitelistMiddleware(whitelist []string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		clientIp := c.ClientIP()
-		if len(whitelist) == 0 {
-			return
-		}
-		if !slices.Contains(whitelist, clientIp) {
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": fmt.Sprintf("Client IP %s denied", clientIp),
-			})
-			return
-		}
+func RunDumpConfigCmd(cmd *cobra.Command, args []string) {
+	fmt.Println(`bind_ip: 127.0.0.1
+bind_port: 9876
+whitelist:
+  - 192.168.0.10
+  - 192.168.0.11
+	`)
+}
+
+func NewDumpConfigCmd() *cobra.Command {
+	c := cobra.Command{
+		Use:   "dump-config",
+		Short: "Dump default configuration",
+		Long:  "Dump default configuration",
+		Run:   RunDumpConfigCmd,
 	}
+
+	return &c
 }
