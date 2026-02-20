@@ -19,11 +19,56 @@ package app
 
 import (
 	"fmt"
+	"net"
 	"net/http"
+	"slices"
+	"strconv"
 
 	"github.com/cqroot/tinyserver/internal/middleware"
+	"github.com/fatih/color"
 	"github.com/gin-gonic/gin"
 )
+
+func IsWildcardHosts(host string) bool {
+	wildcardHosts := []string{"", "0.0.0.0", "::"}
+	return slices.Contains(wildcardHosts, host)
+}
+
+func GetLocalIps() ([]string, error) {
+	var ips []string
+	addrs, err := net.InterfaceAddrs()
+	if err != nil {
+		return nil, err
+	}
+
+	for _, addr := range addrs {
+		ipNet, ok := addr.(*net.IPNet)
+		if !ok {
+			continue
+		}
+		ip := ipNet.IP
+		if ip.IsLoopback() || ip.IsLinkLocalUnicast() {
+			continue
+		}
+		if ip.IsGlobalUnicast() {
+			ips = append(ips, ip.String())
+		}
+	}
+	return ips, nil
+}
+
+func PrintAvailableAddrs(port int) {
+	color.HiBlue("  Available bind addresses")
+	ips, err := GetLocalIps()
+	if err != nil {
+		return
+	}
+
+	for _, ip := range ips {
+		fmt.Printf("    %s http://%s\n",
+			color.HiBlueString("•"), net.JoinHostPort(ip, strconv.Itoa(port)))
+	}
+}
 
 func Run(bindIp string, bindPort int, whitelist []string) error {
 	gin.SetMode(gin.ReleaseMode)
@@ -31,6 +76,15 @@ func Run(bindIp string, bindPort int, whitelist []string) error {
 	app.Use(middleware.WhitelistMiddleware(whitelist))
 	app.StaticFS("/", http.Dir("."))
 
-	addr := fmt.Sprintf("%s:%d", bindIp, bindPort)
+	addr := net.JoinHostPort(bindIp, strconv.Itoa(bindPort))
+
+	color.HiGreen("[TinyServer] Starting TinyServer.")
+	fmt.Printf("  %s  %s:%d\n", color.HiBlueString("Bind Addr"), bindIp, bindPort)
+	fmt.Printf("  %s  %v\n", color.HiBlueString("Whitelist"), whitelist)
+	if IsWildcardHosts(bindIp) {
+		PrintAvailableAddrs(bindPort)
+	}
+	fmt.Println()
+
 	return app.Run(addr)
 }

@@ -21,7 +21,6 @@ import (
 	"fmt"
 
 	"github.com/cqroot/tinyserver/internal/app"
-	"github.com/fatih/color"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
@@ -47,11 +46,6 @@ func RunRootCmd(cmd *cobra.Command, args []string) {
 	bindIp := viper.GetString("bind_ip")
 	bindPort := viper.GetInt("bind_port")
 	whitelist := viper.GetStringSlice("whitelist")
-
-	color.HiGreen("[TinyServer] Starting TinyServer.")
-	fmt.Printf("  %s: %s:%d\n", color.HiBlueString("Bind Addr"), bindIp, bindPort)
-	fmt.Printf("  %s: %v\n", color.HiBlueString("Whitelist"), whitelist)
-	fmt.Println()
 
 	cobra.CheckErr(app.Run(bindIp, bindPort, whitelist))
 }
