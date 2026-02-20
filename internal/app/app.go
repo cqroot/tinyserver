@@ -48,7 +48,10 @@ const dirListTemplate = `
     <h1>Index of {{ .Path }}</h1>
     <ul>
         {{ range .Items }}
-            <li><a href="{{ .Name }}" class="{{ if .IsDir }}dir{{ else }}file{{ end }}">{{ .Name }}</a></li>
+            <li>
+                <span class="icon">{{ if .IsDir }}📁 {{ else }}📄 {{ end }}</span>
+                <a href="{{ .Name }}" class="{{ if .IsDir }}dir{{ else }}file{{ end }}">{{ .Name }}</a>
+            </li>
         {{ end }}
     </ul>
 </body>
@@ -99,6 +102,12 @@ func HandleFunc(c *gin.Context) {
 		IsDir bool
 	}
 	items := make([]item, 0, len(files))
+	if reqPath != "/" {
+		items = append(items, item{
+			Name:  "..",
+			IsDir: true,
+		})
+	}
 	for _, f := range files {
 		name := f.Name()
 		if f.IsDir() {
