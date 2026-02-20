@@ -1,0 +1,38 @@
+h1 {
+    font-size: 1.8rem;
+    border-bottom: 1px solid #ccc;
+    padding-bottom: 5px;
+    margin-top: 0;
+}
+
+ul {
+    list-style: none;
+    padding: 0;
+}
+li {
+    margin: 10px 0;
+}
+a {
+    text-decoration: none;
+    display: inline-block;
+}
+a:hover {
+    text-decoration: underline;
+}
+
+.dir {
+    font-weight: bold;
+}
+
+@media (max-width: 600px) {
+    body {
+        margin: 15px;
+        font-size: 1.1rem;
+    }
+    h1 {
+        font-size: 1.6rem;
+    }
+    li {
+        margin: 15px 0;
+    }
+}
