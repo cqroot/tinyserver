@@ -25,7 +25,7 @@ import (
 
 func RunDumpConfigCmd(cmd *cobra.Command, args []string) {
 	fmt.Println(`bind_ip: 127.0.0.1
-bind_port: 9876
+bind_port: 9000
 whitelist:
   - 192.168.0.10
   - 192.168.0.11

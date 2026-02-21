@@ -24,7 +24,7 @@ Start the server in the current directory:
 tinyserver
 ```
 
-By default, the server listens on all interfaces (`""`), port `9876`, and serves files from the current working directory.
+By default, the server listens on all interfaces (`""`), port `9000`, and serves files from the current working directory.
 
 ### Command-line Options
 
@@ -32,7 +32,7 @@ By default, the server listens on all interfaces (`""`), port `9876`, and serves
 | :---------------- | :---------------- | :------ | :------------------------------------------ |
 | Working directory | `-d, --work_dir`  | `"."`   | Directory to serve files from               |
 | Bind IP           | `-i, --bind_ip`   | `""`    | IP address to bind (empty = all interfaces) |
-| Bind port         | `-p, --bind_port` | `9876`  | Port to listen on                           |
+| Bind port         | `-p, --bind_port` | `9000`  | Port to listen on                           |
 | Whitelist         | `-w, --whitelist` | `nil`   | Comma-separated list of allowed source IPs  |
 
 ### Configuration File
@@ -41,7 +41,7 @@ You can also provide settings via a YAML configuration file. Place a file named 
 
 ```yaml
 bind_ip: 0.0.0.0  # Bind IP
-bind_port: 9876   # Bind port
+bind_port: 9000   # Bind port
 whitelist:        # List of allowed source IPs
   - 192.168.1.10
   - 192.168.1.11

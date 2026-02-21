@@ -18,13 +18,27 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package cmd
 
 import (
+	"fmt"
 	"log/slog"
+	"net"
 	"path/filepath"
 
 	"github.com/cqroot/tinyserver/internal/app"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
+
+func autoSelectPort(startPort int, maxAttempts int) (int, error) {
+	for port := startPort; port < startPort+maxAttempts; port++ {
+		addr := fmt.Sprintf(":%d", port)
+		listener, err := net.Listen("tcp", addr)
+		if err == nil {
+			listener.Close()
+			return port, nil
+		}
+	}
+	return 0, fmt.Errorf("no available port found in range %d-%d", startPort, startPort+maxAttempts-1)
+}
 
 func RunRootCmd(cmd *cobra.Command, args []string) {
 	workDir := viper.GetString("work_dir")
@@ -37,6 +51,10 @@ func RunRootCmd(cmd *cobra.Command, args []string) {
 	bindPort := viper.GetInt("bind_port")
 	if cmd.Flags().Changed("bind_port") {
 		bindPort, _ = cmd.Flags().GetInt("bind_port")
+	} else if !viper.InConfig("bind_port") {
+		var err error
+		bindPort, err = autoSelectPort(9000, 1000)
+		cobra.CheckErr(err)
 	}
 
 	whitelist := viper.GetStringSlice("whitelist")
@@ -64,7 +82,7 @@ func NewRootCmd() *cobra.Command {
 			}
 
 			viper.SetDefault("bind_ip", "")
-			viper.SetDefault("bind_port", 9876)
+			viper.SetDefault("bind_port", 9000)
 			viper.SetDefault("whitelist", []string{})
 
 			viper.Set("work_dir", workDir)
@@ -74,7 +92,7 @@ func NewRootCmd() *cobra.Command {
 
 	c.PersistentFlags().StringP("work_dir", "d", ".", "working directory")
 	c.PersistentFlags().StringP("bind_ip", "i", "", "bind ip")
-	c.PersistentFlags().IntP("bind_port", "p", 9876, "bind port")
+	c.PersistentFlags().IntP("bind_port", "p", 9000, "bind port")
 	c.PersistentFlags().StringArrayP("whitelist", "w", nil, "whitelist")
 
 	c.AddCommand(NewDumpConfigCmd())
