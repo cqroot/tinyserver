@@ -24,9 +24,9 @@ builds:
       - darwin
     ldflags:
       - -s -w
-      - -X github.com/cqroot/tinyserver/pkg/version.version={{.Version}}
-      - -X github.com/cqroot/tinyserver/pkg/version.commit={{.Commit}}
-      - -X github.com/cqroot/tinyserver/pkg/version.date={{.Date}}
+      - -X github.com/cqroot/tinyserver/internal/version.version={{.Version}}
+      - -X github.com/cqroot/tinyserver/internal/version.commit={{.Commit}}
+      - -X github.com/cqroot/tinyserver/internal/version.date={{.Date}}
 
 archives:
   - formats: [tar.gz]
