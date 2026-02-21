@@ -7,11 +7,26 @@
     <a href="https://github.com/cqroot/tinyserver/actions">
       <img src="https://github.com/cqroot/tinyserver/workflows/test/badge.svg" alt="Action Status" />
     </a>
+    <a href="https://goreportcard.com/report/github.com/cqroot/tinyserver">
+      <img src="https://goreportcard.com/badge/github.com/cqroot/tinyserver" alt="Go Report Card" />
+    </a>
+    <a href="https://github.com/cqroot/tinyserver/tags">
+      <img src="https://img.shields.io/github/v/tag/cqroot/tinyserver" alt="Git tag" />
+    </a>
+    <a href="https://github.com/cqroot/tinyserver/blob/main/go.mod">
+      <img src="https://img.shields.io/github/go-mod/go-version/cqroot/tinyserver" alt="Go Version" />
+    </a>
     <a href="https://github.com/cqroot/tinyserver/blob/main/LICENSE">
       <img src="https://img.shields.io/github/license/cqroot/tinyserver" alt="LICENSE"/>
     </a>
     <a href="https://github.com/cqroot/tinyserver/issues">
       <img src="https://img.shields.io/github/issues/cqroot/tinyserver" alt="Issues"/>
+    </a>
+    <a href="https://github.com/cqroot/tinyserver/issues">
+      <img src="https://img.shields.io/github/issues/cqroot/tinyserver" />
+    </a>
+    <a href="https://github.com/cqroot/tinyserver/releases">
+      <img src="https://img.shields.io/github/downloads/cqroot/tinyserver/total?label=github%20downloads" />
     </a>
   </p>
 </div>
