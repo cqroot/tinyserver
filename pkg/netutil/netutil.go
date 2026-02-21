@@ -56,7 +56,7 @@ func FindAvailablePort(bindIp string, startPort, maxAttempts int) (int, error) {
 		addr := net.JoinHostPort(bindIp, strconv.Itoa(port))
 		listener, err := net.Listen("tcp", addr)
 		if err == nil {
-			listener.Close()
+			_ = listener.Close()
 			return port, nil
 		}
 	}

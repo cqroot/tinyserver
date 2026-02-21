@@ -93,10 +93,7 @@ func IsWildcardHosts(host string) bool {
 }
 
 func (a App) IsAvailablePath(path string) bool {
-	if strings.HasPrefix(filepath.Base(path), ".") {
-		return false
-	}
-	return true
+	return !strings.HasPrefix(filepath.Base(path), ".")
 }
 
 func (a App) HandleDir(c *gin.Context, reqPath string, localPath string) {
