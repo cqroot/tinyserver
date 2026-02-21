@@ -22,6 +22,7 @@ import (
 	"path/filepath"
 
 	"github.com/cqroot/tinyserver/internal/app"
+	"github.com/cqroot/tinyserver/internal/version"
 	"github.com/cqroot/tinyserver/pkg/netutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -84,6 +85,7 @@ func NewRootCmd() *cobra.Command {
 	c.PersistentFlags().StringArrayP("whitelist", "w", nil, "whitelist")
 
 	c.AddCommand(NewDumpConfigCmd())
+	c.Version = version.Get().String()
 	return &c
 }
 
