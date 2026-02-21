@@ -63,18 +63,29 @@ func init() {
 	cssContent = string(cssBytes)
 }
 
+type App struct {
+	workDir string
+}
+
+func New(workDir string) *App {
+	a := App{
+		workDir: workDir,
+	}
+	return &a
+}
+
 func IsWildcardHosts(host string) bool {
 	wildcardHosts := []string{"", "0.0.0.0", "::"}
 	return slices.Contains(wildcardHosts, host)
 }
 
-func HandleFunc(c *gin.Context) {
+func (a App) HandleFunc(c *gin.Context) {
 	reqPath := c.Param("path")
 	if reqPath == "" {
 		reqPath = "/"
 	}
 
-	localPath := filepath.Join(".", reqPath)
+	localPath := filepath.Join(a.workDir, reqPath)
 
 	info, err := os.Stat(localPath)
 	if os.IsNotExist(err) {
@@ -126,14 +137,14 @@ func HandleFunc(c *gin.Context) {
 	})
 }
 
-func Run(bindIp string, bindPort int, whitelist []string) error {
+func (a App) Run(bindIp string, bindPort int, whitelist []string) error {
 	gin.SetMode(gin.ReleaseMode)
 	app := gin.Default()
 	app.Use(middleware.WhitelistMiddleware(whitelist))
 
 	tmpl := template.Must(template.New("dirlist").Parse(dirListTemplate))
 	app.SetHTMLTemplate(tmpl)
-	app.GET("/*path", HandleFunc)
+	app.GET("/*path", a.HandleFunc)
 
 	PrintAppInfo(bindIp, bindPort, whitelist)
 	addr := net.JoinHostPort(bindIp, strconv.Itoa(bindPort))

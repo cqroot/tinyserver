@@ -19,35 +19,33 @@ package cmd
 
 import (
 	"fmt"
+	"path/filepath"
 
 	"github.com/cqroot/tinyserver/internal/app"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-var usedConfig string
-
-func init() {
-	cobra.OnInitialize(initConfig)
-}
-
-func initConfig() {
-	viper.SetConfigFile("./tinyserver.yaml")
-	if err := viper.ReadInConfig(); err == nil {
-		usedConfig = viper.ConfigFileUsed()
-	}
-}
-
 func RunRootCmd(cmd *cobra.Command, args []string) {
-	if usedConfig != "" {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
+	workDir := viper.GetString("work_dir")
 
 	bindIp := viper.GetString("bind_ip")
-	bindPort := viper.GetInt("bind_port")
-	whitelist := viper.GetStringSlice("whitelist")
+	if cmd.Flags().Changed("bind_ip") {
+		bindIp, _ = cmd.Flags().GetString("bind_ip")
+	}
 
-	cobra.CheckErr(app.Run(bindIp, bindPort, whitelist))
+	bindPort := viper.GetInt("bind_port")
+	if cmd.Flags().Changed("bind_port") {
+		bindPort, _ = cmd.Flags().GetInt("bind_port")
+	}
+
+	whitelist := viper.GetStringSlice("whitelist")
+	if cmd.Flags().Changed("whitelist") {
+		whitelist, _ = cmd.Flags().GetStringArray("whitelist")
+	}
+
+	a := app.New(workDir)
+	cobra.CheckErr(a.Run(bindIp, bindPort, whitelist))
 }
 
 func NewRootCmd() *cobra.Command {
@@ -55,18 +53,31 @@ func NewRootCmd() *cobra.Command {
 		Use:   "tinyserver",
 		Short: "A tiny server",
 		Long:  "A tiny server",
-		Run:   RunRootCmd,
+		PersistentPreRun: func(cmd *cobra.Command, args []string) {
+			workDir, err := cmd.Flags().GetString("work_dir")
+			cobra.CheckErr(err)
+
+			configPath := filepath.Join(workDir, "tinyserver.yaml")
+			viper.SetConfigFile(configPath)
+			if err := viper.ReadInConfig(); err == nil {
+				fmt.Println("Using config file:", viper.ConfigFileUsed())
+			}
+
+			viper.SetDefault("bind_ip", "")
+			viper.SetDefault("bind_port", 9876)
+			viper.SetDefault("whitelist", []string{})
+
+			viper.Set("work_dir", workDir)
+		},
+		Run: RunRootCmd,
 	}
 
+	c.PersistentFlags().StringP("work_dir", "d", ".", "working directory")
 	c.PersistentFlags().StringP("bind_ip", "i", "", "bind ip")
 	c.PersistentFlags().IntP("bind_port", "p", 9876, "bind port")
 	c.PersistentFlags().StringArrayP("whitelist", "w", nil, "whitelist")
-	cobra.CheckErr(viper.BindPFlag("bind_ip", c.PersistentFlags().Lookup("bind_ip")))
-	cobra.CheckErr(viper.BindPFlag("bind_port", c.PersistentFlags().Lookup("bind_port")))
-	cobra.CheckErr(viper.BindPFlag("whitelist", c.PersistentFlags().Lookup("whitelist")))
 
 	c.AddCommand(NewDumpConfigCmd())
-
 	return &c
 }
 
