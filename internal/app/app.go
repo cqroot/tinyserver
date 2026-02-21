@@ -39,21 +39,21 @@ const dirListTemplate = `
 <!DOCTYPE html>
 <html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
-    <title>{{ .Path }}</title>
-	<style>{{ .Css }}</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5, user-scalable=yes">
+  <title>{{ .Path }}</title>
+  <style>{{ .Css }}</style>
 </head>
 <body>
-    <h1>Index of {{ .Path }}</h1>
-    <ul>
-        {{ range .Items }}
-            <li>
-                <span class="icon">{{ if .IsDir }}📁 {{ else }}📄 {{ end }}</span>
-                <a href="{{ .Name }}" class="{{ if .IsDir }}dir{{ else }}file{{ end }}">{{ .Name }}</a>
-            </li>
-        {{ end }}
-    </ul>
+  <h1>Index of {{ .Path }}</h1>
+  <ul>
+    {{ range .Items }}
+      <li>
+        <span class="icon">{{ if .IsDir }}📁 {{ else }}📄 {{ end }}</span>
+        <a href="{{ .Name }}" class="{{ if .IsDir }}dir{{ else }}file{{ end }}">{{ .Name }}</a>
+      </li>
+    {{ end }}
+  </ul>
 </body>
 </html>
 `
