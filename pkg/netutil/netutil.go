@@ -15,16 +15,11 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package app
+package netutil
 
 import (
 	"fmt"
-	"log/slog"
 	"net"
-	"strconv"
-	"strings"
-
-	"github.com/charmbracelet/lipgloss"
 )
 
 func GetLocalIps() ([]string, error) {
@@ -50,24 +45,14 @@ func GetLocalIps() ([]string, error) {
 	return ips, nil
 }
 
-func LogAppInfo(bindIp string, bindPort int, whitelist []string) {
-	slog.Info("Starting TinyServer.",
-		slog.String("bind_addr", net.JoinHostPort(bindIp, strconv.Itoa(bindPort))),
-		slog.String("whitelist", strings.Join(whitelist, ", ")),
-	)
-
-	if IsWildcardHosts(bindIp) {
-		ips, err := GetLocalIps()
-		if err != nil {
-			return
-		}
-
-		slog.Info("Available bind addresses:")
-		for _, ip := range ips {
-			slog.Info(fmt.Sprintf("  %s http://%s",
-				lipgloss.NewStyle().Foreground(lipgloss.Color("12")).Render("•"),
-				net.JoinHostPort(ip, strconv.Itoa(bindPort)),
-			))
+func FindAvailablePort(startPort int, maxAttempts int) (int, error) {
+	for port := startPort; port < startPort+maxAttempts; port++ {
+		addr := fmt.Sprintf(":%d", port)
+		listener, err := net.Listen("tcp", addr)
+		if err == nil {
+			listener.Close()
+			return port, nil
 		}
 	}
+	return 0, fmt.Errorf("no available port found in range %d-%d", startPort, startPort+maxAttempts-1)
 }

@@ -19,15 +19,20 @@ package app
 
 import (
 	"embed"
+	"fmt"
 	"html/template"
+	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"path/filepath"
 	"slices"
 	"strconv"
+	"strings"
 
+	"github.com/charmbracelet/lipgloss"
 	"github.com/cqroot/tinyserver/internal/middleware"
+	"github.com/cqroot/tinyserver/pkg/netutil"
 	"github.com/gin-gonic/gin"
 )
 
@@ -67,11 +72,16 @@ type App struct {
 	workDir string
 }
 
-func New(workDir string) *App {
-	a := App{
-		workDir: workDir,
+func New(workDir string) (*App, error) {
+	absWorkDir, err := filepath.Abs(workDir)
+	if err != nil {
+		return nil, err
 	}
-	return &a
+
+	a := App{
+		workDir: absWorkDir,
+	}
+	return &a, nil
 }
 
 func IsWildcardHosts(host string) bool {
@@ -85,7 +95,18 @@ func (a App) HandleFunc(c *gin.Context) {
 		reqPath = "/"
 	}
 
-	localPath := filepath.Join(a.workDir, reqPath)
+	localPath, err := filepath.Abs(filepath.Join(a.workDir, reqPath))
+	if err != nil {
+		slog.Error("Internal server error.", slog.String("err", err.Error()))
+		c.String(http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	if !strings.HasPrefix(localPath, a.workDir) {
+		slog.Error("Access denied.", slog.String("path", localPath))
+		c.String(http.StatusForbidden, "access denied")
+		return
+	}
 
 	info, err := os.Stat(localPath)
 	if os.IsNotExist(err) {
@@ -93,7 +114,8 @@ func (a App) HandleFunc(c *gin.Context) {
 		return
 	}
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		slog.Error("Internal server error.", slog.String("err", err.Error()))
+		c.String(http.StatusInternalServerError, "internal server error")
 		return
 	}
 
@@ -102,21 +124,27 @@ func (a App) HandleFunc(c *gin.Context) {
 		return
 	}
 
+	if !strings.HasSuffix(reqPath, "/") {
+		c.Redirect(http.StatusMovedPermanently, reqPath+"/")
+		return
+	}
+
 	files, err := os.ReadDir(localPath)
 	if err != nil {
-		c.String(http.StatusInternalServerError, err.Error())
+		slog.Error("Internal server error.", slog.String("err", err.Error()))
+		c.String(http.StatusInternalServerError, "internal server error")
 		return
 	}
 
 	type item struct {
-		Name  string
-		IsDir bool
+		name  string
+		isDir bool
 	}
 	items := make([]item, 0, len(files))
 	if reqPath != "/" {
 		items = append(items, item{
-			Name:  "..",
-			IsDir: true,
+			name:  "..",
+			isDir: true,
 		})
 	}
 	for _, f := range files {
@@ -125,8 +153,8 @@ func (a App) HandleFunc(c *gin.Context) {
 			name += "/"
 		}
 		items = append(items, item{
-			Name:  name,
-			IsDir: f.IsDir(),
+			name:  name,
+			isDir: f.IsDir(),
 		})
 	}
 
@@ -137,18 +165,40 @@ func (a App) HandleFunc(c *gin.Context) {
 	})
 }
 
+func LogAppInfo(bindIp string, bindPort int, whitelist []string) {
+	slog.Info("Starting TinyServer.",
+		slog.String("bind_addr", net.JoinHostPort(bindIp, strconv.Itoa(bindPort))),
+		slog.String("whitelist", strings.Join(whitelist, ", ")),
+	)
+
+	if IsWildcardHosts(bindIp) {
+		ips, err := netutil.GetLocalIps()
+		if err != nil {
+			return
+		}
+
+		slog.Info("Available bind addresses:")
+		for _, ip := range ips {
+			slog.Info(fmt.Sprintf("  %s http://%s",
+				lipgloss.NewStyle().Foreground(lipgloss.Color("12")).Render("•"),
+				net.JoinHostPort(ip, strconv.Itoa(bindPort)),
+			))
+		}
+	}
+}
+
 func (a App) Run(bindIp string, bindPort int, whitelist []string) error {
 	gin.SetMode(gin.ReleaseMode)
-	app := gin.New()
-	app.Use(gin.Recovery())
-	app.Use(middleware.WhitelistMiddleware(whitelist))
-	app.Use(middleware.LoggerMiddleware())
+	engine := gin.New()
+	engine.Use(gin.Recovery())
+	engine.Use(middleware.WhitelistMiddleware(whitelist))
+	engine.Use(middleware.LoggerMiddleware())
 
 	tmpl := template.Must(template.New("dirlist").Parse(dirListTemplate))
-	app.SetHTMLTemplate(tmpl)
-	app.GET("/*path", a.HandleFunc)
+	engine.SetHTMLTemplate(tmpl)
+	engine.GET("/*path", a.HandleFunc)
 
 	LogAppInfo(bindIp, bindPort, whitelist)
 	addr := net.JoinHostPort(bindIp, strconv.Itoa(bindPort))
-	return app.Run(addr)
+	return engine.Run(addr)
 }

@@ -18,27 +18,14 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package cmd
 
 import (
-	"fmt"
 	"log/slog"
-	"net"
 	"path/filepath"
 
 	"github.com/cqroot/tinyserver/internal/app"
+	"github.com/cqroot/tinyserver/pkg/netutil"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
-
-func autoSelectPort(startPort int, maxAttempts int) (int, error) {
-	for port := startPort; port < startPort+maxAttempts; port++ {
-		addr := fmt.Sprintf(":%d", port)
-		listener, err := net.Listen("tcp", addr)
-		if err == nil {
-			listener.Close()
-			return port, nil
-		}
-	}
-	return 0, fmt.Errorf("no available port found in range %d-%d", startPort, startPort+maxAttempts-1)
-}
 
 func RunRootCmd(cmd *cobra.Command, args []string) {
 	workDir := viper.GetString("work_dir")
@@ -53,7 +40,7 @@ func RunRootCmd(cmd *cobra.Command, args []string) {
 		bindPort, _ = cmd.Flags().GetInt("bind_port")
 	} else if !viper.InConfig("bind_port") {
 		var err error
-		bindPort, err = autoSelectPort(9000, 1000)
+		bindPort, err = netutil.FindAvailablePort(9000, 1000)
 		cobra.CheckErr(err)
 	}
 
@@ -62,7 +49,8 @@ func RunRootCmd(cmd *cobra.Command, args []string) {
 		whitelist, _ = cmd.Flags().GetStringArray("whitelist")
 	}
 
-	a := app.New(workDir)
+	a, err := app.New(workDir)
+	cobra.CheckErr(err)
 	cobra.CheckErr(a.Run(bindIp, bindPort, whitelist))
 }
 

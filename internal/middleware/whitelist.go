@@ -33,8 +33,7 @@ func WhitelistMiddleware(whitelist []string) gin.HandlerFunc {
 			return
 		}
 		if !slices.Contains(whitelist, clientIp) {
-			gin.Logger()
-			slog.Info("Forbidden request.", slog.String("ip", clientIp))
+			slog.Warn("Forbidden request.", slog.String("ip", clientIp))
 			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
 				"error": fmt.Sprintf("Client IP %s denied", clientIp),
 			})
