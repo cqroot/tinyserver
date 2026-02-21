@@ -64,7 +64,10 @@ const dirListTemplate = `
 `
 
 func init() {
-	cssBytes, _ := cssFiles.ReadFile("style.css")
+	cssBytes, err := cssFiles.ReadFile("style.css")
+	if err != nil {
+		panic(fmt.Sprintf("failed to read embedded style.css: %v", err))
+	}
 	cssContent = string(cssBytes)
 }
 
@@ -89,6 +92,68 @@ func IsWildcardHosts(host string) bool {
 	return slices.Contains(wildcardHosts, host)
 }
 
+func (a App) IsAvailablePath(path string) bool {
+	if strings.HasPrefix(filepath.Base(path), ".") {
+		return false
+	}
+	return true
+}
+
+func (a App) HandleDir(c *gin.Context, reqPath string, localPath string) {
+	if !strings.HasSuffix(reqPath, "/") {
+		c.Redirect(http.StatusMovedPermanently, reqPath+"/")
+		return
+	}
+
+	files, err := os.ReadDir(localPath)
+	if err != nil {
+		slog.Error("Internal server error.", slog.String("err", err.Error()))
+		c.String(http.StatusInternalServerError, "internal server error")
+		return
+	}
+
+	slices.SortFunc(files, func(a, b os.DirEntry) int {
+		if a.IsDir() && !b.IsDir() {
+			return -1
+		}
+		if !a.IsDir() && b.IsDir() {
+			return 1
+		}
+		return strings.Compare(strings.ToLower(a.Name()), strings.ToLower(b.Name()))
+	})
+
+	type item struct {
+		Name  string
+		IsDir bool
+	}
+	items := make([]item, 0, len(files))
+	if reqPath != "/" {
+		items = append(items, item{
+			Name:  "..",
+			IsDir: true,
+		})
+	}
+	for _, f := range files {
+		name := f.Name()
+		if !a.IsAvailablePath(name) {
+			continue
+		}
+		if f.IsDir() {
+			name += "/"
+		}
+		items = append(items, item{
+			Name:  name,
+			IsDir: f.IsDir(),
+		})
+	}
+
+	c.HTML(http.StatusOK, "dirlist", gin.H{
+		"Path":  reqPath,
+		"Items": items,
+		"Css":   template.CSS(cssContent),
+	})
+}
+
 func (a App) HandleFunc(c *gin.Context) {
 	reqPath := c.Param("path")
 	if reqPath == "" {
@@ -108,6 +173,11 @@ func (a App) HandleFunc(c *gin.Context) {
 		return
 	}
 
+	if !a.IsAvailablePath(localPath) {
+		c.String(http.StatusNotFound, "404 not found")
+		return
+	}
+
 	info, err := os.Stat(localPath)
 	if os.IsNotExist(err) {
 		c.String(http.StatusNotFound, "404 not found")
@@ -124,45 +194,7 @@ func (a App) HandleFunc(c *gin.Context) {
 		return
 	}
 
-	if !strings.HasSuffix(reqPath, "/") {
-		c.Redirect(http.StatusMovedPermanently, reqPath+"/")
-		return
-	}
-
-	files, err := os.ReadDir(localPath)
-	if err != nil {
-		slog.Error("Internal server error.", slog.String("err", err.Error()))
-		c.String(http.StatusInternalServerError, "internal server error")
-		return
-	}
-
-	type item struct {
-		name  string
-		isDir bool
-	}
-	items := make([]item, 0, len(files))
-	if reqPath != "/" {
-		items = append(items, item{
-			name:  "..",
-			isDir: true,
-		})
-	}
-	for _, f := range files {
-		name := f.Name()
-		if f.IsDir() {
-			name += "/"
-		}
-		items = append(items, item{
-			name:  name,
-			isDir: f.IsDir(),
-		})
-	}
-
-	c.HTML(http.StatusOK, "dirlist", gin.H{
-		"Path":  reqPath,
-		"Items": items,
-		"Css":   template.CSS(cssContent),
-	})
+	a.HandleDir(c, reqPath, localPath)
 }
 
 func LogAppInfo(bindIp string, bindPort int, whitelist []string) {
@@ -172,7 +204,7 @@ func LogAppInfo(bindIp string, bindPort int, whitelist []string) {
 	)
 
 	if IsWildcardHosts(bindIp) {
-		ips, err := netutil.GetLocalIps()
+		ips, err := netutil.GetLocalIPs()
 		if err != nil {
 			return
 		}

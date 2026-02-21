@@ -40,7 +40,7 @@ func RunRootCmd(cmd *cobra.Command, args []string) {
 		bindPort, _ = cmd.Flags().GetInt("bind_port")
 	} else if !viper.InConfig("bind_port") {
 		var err error
-		bindPort, err = netutil.FindAvailablePort(9000, 1000)
+		bindPort, err = netutil.FindAvailablePort(bindIp, 9000, 1000)
 		cobra.CheckErr(err)
 	}
 

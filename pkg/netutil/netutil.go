@@ -20,9 +20,12 @@ package netutil
 import (
 	"fmt"
 	"net"
+	"strconv"
 )
 
-func GetLocalIps() ([]string, error) {
+// GetLocalIPs returns a list of non-loopback, non-link-local unicast IP addresses
+// assigned to the host.
+func GetLocalIPs() ([]string, error) {
 	var ips []string
 	addrs, err := net.InterfaceAddrs()
 	if err != nil {
@@ -45,14 +48,18 @@ func GetLocalIps() ([]string, error) {
 	return ips, nil
 }
 
-func FindAvailablePort(startPort int, maxAttempts int) (int, error) {
+// FindAvailablePort attempts to find an available TCP port starting from startPort
+// and trying up to maxAttempts ports. It returns the first available port number,
+// or an error if none is found.
+func FindAvailablePort(bindIp string, startPort, maxAttempts int) (int, error) {
 	for port := startPort; port < startPort+maxAttempts; port++ {
-		addr := fmt.Sprintf(":%d", port)
+		addr := net.JoinHostPort(bindIp, strconv.Itoa(port))
 		listener, err := net.Listen("tcp", addr)
 		if err == nil {
 			listener.Close()
 			return port, nil
 		}
 	}
-	return 0, fmt.Errorf("no available port found in range %d-%d", startPort, startPort+maxAttempts-1)
+	return 0, fmt.Errorf("no available port found in range %d-%d on %s",
+		startPort, startPort+maxAttempts-1, bindIp)
 }
