@@ -139,14 +139,16 @@ func (a App) HandleFunc(c *gin.Context) {
 
 func (a App) Run(bindIp string, bindPort int, whitelist []string) error {
 	gin.SetMode(gin.ReleaseMode)
-	app := gin.Default()
+	app := gin.New()
+	app.Use(gin.Recovery())
 	app.Use(middleware.WhitelistMiddleware(whitelist))
+	app.Use(middleware.LoggerMiddleware())
 
 	tmpl := template.Must(template.New("dirlist").Parse(dirListTemplate))
 	app.SetHTMLTemplate(tmpl)
 	app.GET("/*path", a.HandleFunc)
 
-	PrintAppInfo(bindIp, bindPort, whitelist)
+	LogAppInfo(bindIp, bindPort, whitelist)
 	addr := net.JoinHostPort(bindIp, strconv.Itoa(bindPort))
 	return app.Run(addr)
 }

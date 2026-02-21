@@ -17,8 +17,13 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package main
 
-import "github.com/cqroot/tinyserver/cmd"
+import (
+	"github.com/cqroot/tinyserver/cmd"
+	"github.com/cqroot/tinyserver/internal/log"
+)
 
 func main() {
+	log.InitLogger()
+
 	cmd.Execute()
 }

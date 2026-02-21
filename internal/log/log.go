@@ -15,30 +15,22 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
-package middleware
+package log
 
 import (
-	"fmt"
 	"log/slog"
-	"net/http"
-	"slices"
+	"os"
 
-	"github.com/gin-gonic/gin"
+	"github.com/charmbracelet/log"
 )
 
-func WhitelistMiddleware(whitelist []string) gin.HandlerFunc {
-	return func(c *gin.Context) {
-		clientIp := c.ClientIP()
-		if len(whitelist) == 0 {
-			return
-		}
-		if !slices.Contains(whitelist, clientIp) {
-			gin.Logger()
-			slog.Info("Forbidden request.", slog.String("ip", clientIp))
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": fmt.Sprintf("Client IP %s denied", clientIp),
-			})
-			return
-		}
-	}
+func InitLogger() {
+	handler := log.NewWithOptions(os.Stdout, log.Options{
+		Level:           log.InfoLevel,
+		ReportTimestamp: true,
+		TimeFormat:      "2006-01-02 15:04:05",
+	})
+	logger := slog.New(handler)
+
+	slog.SetDefault(logger)
 }

@@ -18,27 +18,32 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package middleware
 
 import (
-	"fmt"
 	"log/slog"
-	"net/http"
-	"slices"
 
 	"github.com/gin-gonic/gin"
 )
 
-func WhitelistMiddleware(whitelist []string) gin.HandlerFunc {
+func LoggerMiddleware() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		clientIp := c.ClientIP()
-		if len(whitelist) == 0 {
-			return
+		path := c.Request.URL.Path
+		method := c.Request.Method
+
+		c.Next()
+
+		status := c.Writer.Status()
+		clientIP := c.ClientIP()
+		errorMsg := c.Errors.ByType(gin.ErrorTypePrivate).String()
+
+		attrs := []any{
+			slog.Int("status", status),
+			slog.String("ip", clientIP),
+			slog.String("method", method),
+			slog.String("path", path),
 		}
-		if !slices.Contains(whitelist, clientIp) {
-			gin.Logger()
-			slog.Info("Forbidden request.", slog.String("ip", clientIp))
-			c.AbortWithStatusJSON(http.StatusForbidden, gin.H{
-				"error": fmt.Sprintf("Client IP %s denied", clientIp),
-			})
-			return
+		if errorMsg != "" {
+			attrs = append(attrs, slog.String("errors", errorMsg))
 		}
+
+		slog.Info("🌐", attrs...)
 	}
 }

@@ -18,7 +18,7 @@ along with this program.  If not, see <https://www.gnu.org/licenses/>.
 package cmd
 
 import (
-	"fmt"
+	"log/slog"
 	"path/filepath"
 
 	"github.com/cqroot/tinyserver/internal/app"
@@ -60,7 +60,7 @@ func NewRootCmd() *cobra.Command {
 			configPath := filepath.Join(workDir, "tinyserver.yaml")
 			viper.SetConfigFile(configPath)
 			if err := viper.ReadInConfig(); err == nil {
-				fmt.Println("Using config file:", viper.ConfigFileUsed())
+				slog.Info("Load config file.", slog.String("file", viper.ConfigFileUsed()))
 			}
 
 			viper.SetDefault("bind_ip", "")

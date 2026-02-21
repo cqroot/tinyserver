@@ -19,10 +19,12 @@ package app
 
 import (
 	"fmt"
+	"log/slog"
 	"net"
 	"strconv"
+	"strings"
 
-	"github.com/fatih/color"
+	"github.com/charmbracelet/lipgloss"
 )
 
 func GetLocalIps() ([]string, error) {
@@ -48,25 +50,24 @@ func GetLocalIps() ([]string, error) {
 	return ips, nil
 }
 
-func PrintAvailableAddrs(port int) {
-	color.HiBlue("  Available bind addresses")
-	ips, err := GetLocalIps()
-	if err != nil {
-		return
-	}
+func LogAppInfo(bindIp string, bindPort int, whitelist []string) {
+	slog.Info("Starting TinyServer.",
+		slog.String("bind_addr", net.JoinHostPort(bindIp, strconv.Itoa(bindPort))),
+		slog.String("whitelist", strings.Join(whitelist, ", ")),
+	)
 
-	for _, ip := range ips {
-		fmt.Printf("    %s http://%s\n",
-			color.HiBlueString("•"), net.JoinHostPort(ip, strconv.Itoa(port)))
-	}
-}
-
-func PrintAppInfo(bindIp string, bindPort int, whitelist []string) {
-	color.HiGreen("[TinyServer] Starting TinyServer.")
-	fmt.Printf("  %s  %s:%d\n", color.HiBlueString("Bind Addr"), bindIp, bindPort)
-	fmt.Printf("  %s  %v\n", color.HiBlueString("Whitelist"), whitelist)
 	if IsWildcardHosts(bindIp) {
-		PrintAvailableAddrs(bindPort)
+		ips, err := GetLocalIps()
+		if err != nil {
+			return
+		}
+
+		slog.Info("Available bind addresses:")
+		for _, ip := range ips {
+			slog.Info(fmt.Sprintf("  %s http://%s",
+				lipgloss.NewStyle().Foreground(lipgloss.Color("12")).Render("•"),
+				net.JoinHostPort(ip, strconv.Itoa(bindPort)),
+			))
+		}
 	}
-	fmt.Println()
 }
